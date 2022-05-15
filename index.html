@@ -183,8 +183,7 @@
                     userInfo: {
                         displayName: `${settings.profile}`,
                     },
-                    notifications: [{'notify.chatMessages': false}],
-                    disabledSounds: true
+                    disabledSounds: ['INCOMING_MSG_SOUND']
                 };
 
                 api = new JitsiMeetExternalAPI(config.domain, options);
@@ -206,7 +205,7 @@
             }
 
             document.getElementById("sendMessage").addEventListener('input', (event) => {
-                api.executeCommand('sendChatMessage', event.target.value, '');
+                api.executeCommand('sendChatMessage', event.target.value, '', true);
                 appendOverlay(settings.profile, event.target.value)
             })
 

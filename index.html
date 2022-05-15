@@ -208,6 +208,7 @@
 
 
             function removeOverlay(){
+                console.log('remove overlay')
                 if (document.getElementById("overlay")) document.getElementById("overlay").remove()
             }
 
@@ -215,31 +216,27 @@
 
             function appendOverlay(message){
 
-                clearTimeout(removeOverlay);
+                // clearTimeout(removeOverlay);
+                setTimeout(removeOverlay, 6000);
                 // removeOverlay()
 
                 let split = message.split(' ')
-                if (split.length >= 6){
-                    split.splice(0, 1)
-                    console.log(split.join(' '))
-                    message = split.join(' ')
+                if (split.length >= 10){
+                    message = split.slice(-10).join(' ')
                 }
 
                 if (document.getElementById("overlay")) {
                     document.getElementById("overlay").textContent = message
-                    return
+                } else {
+                    const width = config.container.offsetWidth
+                    const overlay = document.createElement("div")
+                    overlay.id = 'overlay'
+                    overlay.textContent = message
+                    config.container.append(overlay)
+                    const overlayWidth = document.getElementById("overlay").offsetWidth
+                    document.getElementById("overlay").style.left = `calc(50% - ${overlayWidth / 2}px)`
                 }
 
-        
-                const width = config.container.offsetWidth
-                const overlay = document.createElement("div")
-                overlay.id = 'overlay'
-                overlay.textContent = message
-                config.container.append(overlay)
-                const overlayWidth = document.getElementById("overlay").offsetWidth
-                document.getElementById("overlay").style.left = `calc(50% - ${overlayWidth / 2}px)`
-
-                setTimeout(removeOverlay, config.sleep);
             }
 
 

@@ -183,6 +183,8 @@
                     userInfo: {
                         displayName: `${settings.profile}`,
                     },
+                    notifications: [{'notify.chatMessages': false}],
+                    disabledSounds: true
                 };
 
                 api = new JitsiMeetExternalAPI(config.domain, options);
@@ -190,7 +192,7 @@
                 api.executeCommand('overwriteConfig', { toolbarButtons: ['microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen', 'hangup', 'settings', 'tileview'] })
 
                 api.addListener('incomingMessage', (log) => {
-                    appendOverlay(log)
+                    appendOverlay(log.nick, log.message)
                 })
 
             }
@@ -205,7 +207,7 @@
 
             document.getElementById("sendMessage").addEventListener('input', (event) => {
                 api.executeCommand('sendChatMessage', event.target.value, '');
-                appendOverlay(event.target.value)
+                appendOverlay(settings.profile, event.target.value)
             })
 
 
@@ -216,7 +218,7 @@
 
 
 
-            function appendOverlay(message){
+            function appendOverlay(profile, message){
 
                 // clearTimeout(removeOverlay);
                 setTimeout(removeOverlay, 6000);
@@ -228,12 +230,12 @@
                 }
 
                 if (document.getElementById("overlay")) {
-                    document.getElementById("overlay").textContent = message
+                    document.getElementById("overlay").textContent = `${profile} - ${message}`
                 } else {
                     const width = config.container.offsetWidth
                     const overlay = document.createElement("div")
                     overlay.id = 'overlay'
-                    overlay.textContent = message
+                    overlay.textContent = `${profile} - ${message}`
                     config.container.append(overlay)
                     const overlayWidth = document.getElementById("overlay").offsetWidth
                     document.getElementById("overlay").style.left = `calc(50% - ${overlayWidth / 2}px)`
@@ -274,7 +276,7 @@
 
             recognition.onresult = function(event) {
                 var result = event.results[0][0].transcript;
-                appendOverlay(result)
+                appendOverlay(settings.profile, result)
                 console.log(event.results[0][0].confidence);
             }
 

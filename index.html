@@ -76,16 +76,31 @@
                 border-radius: 12px;
             }
 
-            #overlay {
+            #overlayParent {
                 position: absolute;
-                margin: auto;
+                width: 100%;
+                bottom: 10%;
+                left: 0px;
                 padding: 10px;
+                display: flex;
+            }
+
+            #overlay {
+                margin: auto;
                 background-color: black;
                 color: white;
                 font-size: 32px;
                 font-family: 'Helvetica', sans-serif;
-                bottom: 10%;
+                text-align: center;
             }
+
+            .overlay-profile-pic {
+                width: 80px;
+                height: 80px;
+                object-fit: cover;
+                margin-right: 20px;
+            }
+
         </style>
     </head>
     <body>
@@ -178,17 +193,17 @@
                     parentNode: config.container,
                     lang: 'en',
                     configOverwrite: {
-                        prejoinPageEnabled: false
+                        prejoinPageEnabled: false,
+                        disabledSounds: ['INCOMING_MSG_SOUND'],
+                        notifications: [''],
+                        toolbarButtons: ['microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen', 'hangup', 'settings', 'tileview']
                     },
                     userInfo: {
                         displayName: `${settings.profile}`,
-                    },
-                    disabledSounds: ['INCOMING_MSG_SOUND']
+                    }
                 };
 
                 api = new JitsiMeetExternalAPI(config.domain, options);
-
-                api.executeCommand('overwriteConfig', { toolbarButtons: ['microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen', 'hangup', 'settings', 'tileview'] })
 
                 api.addListener('incomingMessage', (log) => {
                     appendOverlay(log.nick, log.message)
@@ -205,39 +220,53 @@
             }
 
             document.getElementById("sendMessage").addEventListener('input', (event) => {
-                api.executeCommand('sendChatMessage', event.target.value, '', true);
+                api.executeCommand('sendChatMessage', event.target.value, '');
                 appendOverlay(settings.profile, event.target.value)
             })
 
 
             function removeOverlay(){
-                console.log('remove overlay')
-                if (document.getElementById("overlay")) document.getElementById("overlay").remove()
+                if (document.getElementById("overlayParent")) document.getElementById("overlayParent").remove()
             }
 
-
+            let notification = null
 
             function appendOverlay(profile, message){
 
-                // clearTimeout(removeOverlay);
-                setTimeout(removeOverlay, 6000);
-                // removeOverlay()
+                clearTimeout(notification);
+                notification = setTimeout(removeOverlay, 6000);
 
                 let split = message.split(' ')
                 if (split.length >= 10){
                     message = split.slice(-10).join(' ')
                 }
 
-                if (document.getElementById("overlay")) {
-                    document.getElementById("overlay").textContent = `${profile} - ${message}`
+                if (document.getElementById("overlayParent")) {
+                    document.getElementById("overlayText").textContent = `${profile} - ${message}`
+                    document.getElementById("profilePic").src = `${profile}.jpg`
                 } else {
                     const width = config.container.offsetWidth
-                    const overlay = document.createElement("div")
+
+                    const overlayParent = document.createElement("div")
+                    overlayParent.id = 'overlayParent'
+
+                    const overlay = document.createElement("span")
                     overlay.id = 'overlay'
-                    overlay.textContent = `${profile} - ${message}`
-                    config.container.append(overlay)
-                    const overlayWidth = document.getElementById("overlay").offsetWidth
-                    document.getElementById("overlay").style.left = `calc(50% - ${overlayWidth / 2}px)`
+
+                    const overlayText = document.createElement("span")
+                    overlayText.id = 'overlayText'
+                    overlayText.textContent = `${profile} - ${message}`
+
+                    const profilepic = document.createElement("img")
+                    profilepic.id = 'profilePic'
+                    profilepic.src = `${profile}.jpg`
+                    profilepic.classList.add('overlay-profile-pic')
+
+                    overlay.append(profilepic)
+                    overlay.append(overlayText)
+
+                    overlayParent.append(overlay)
+                    config.container.append(overlayParent)
                 }
 
             }
@@ -251,13 +280,13 @@
 
 
             var SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition;
-            var SpeechGrammarList = window.SpeechGrammarList || webkitSpeechGrammarList;
-            var SpeechRecognitionEvent = window.SpeechRecognitionEvent || webkitSpeechRecognitionEvent;
+            // var SpeechGrammarList = window.SpeechGrammarList || webkitSpeechGrammarList;
+            // var SpeechRecognitionEvent = window.SpeechRecognitionEvent || webkitSpeechRecognitionEvent;
 
             var recognition = new SpeechRecognition();
             recognition.lang = 'en-GB';
-            recognition.continuous = settings.continuous;
-            recognition.interimResults = settings.interimResults;
+            recognition.continuous = true;
+            recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
             document.getElementById("toggleSpeech").addEventListener('click', function(){
@@ -265,18 +294,25 @@
                 if (toggle.dataset.speech == 'false'){
                     toggle.dataset.speech = "true"
                     recognition.start();
+                    console.log('starting recognition')
                     event.target.textContent = 'Stop Speech Recognition'
                 } else {
                     toggle.dataset.speech = "false"
                     recognition.stop();
+                    console.log('stopping recognition')
                     event.target.textContent = 'Start Speech Recognition'
                 }
             })
 
             recognition.onresult = function(event) {
+                const length = event.results.length
+                console.log(event.results)
+                console.log(event.results[length-1])
+                console.log(event.result[length-1][0])
                 var result = event.results[0][0].transcript;
+                api.executeCommand('sendChatMessage', result, '');
+                console.log(result)
                 appendOverlay(settings.profile, result)
-                console.log(event.results[0][0].confidence);
             }
 
 
